@@ -10,24 +10,8 @@ const rpcEndpoint = 'https://api.mainnet-beta.solana.com';
 const connection = new Connection(rpcEndpoint, 'confirmed');
 
 // Middleware
-const allowedOrigins = [
-  'https://trustchain-2-frontend.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:5173'
-];
-
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-
-    // Allow Vercel preview URLs
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: ['https://trustchain-2-frontend.vercel.app', /.vercel.app$/],
   methods: ['GET', 'POST'],
   credentials: true
 }));
@@ -44,14 +28,8 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  * MOCK_MODE: Returns hardcoded integrity data to bypass RPC rate limits.
  * Real logic would query Solana history for the pool address.
  */
-app.get('/api/pool/:id/integrity', async (req, res) => {
-  const poolId = req.params.id;
-
-  // Simulate network delay
-  await delay(500);
-
-  if (process.env.MOCK_MODE !== 'false') {
-    // MOCK DATA for specific pools (aligned with frontend)
+const getMockData = (poolId) => {
+  // MOCK DATA for specific pools (aligned with frontend)
   const mockData = {
     'SOL-USDC': {
       giniScore: 0.25,
@@ -73,17 +51,35 @@ app.get('/api/pool/:id/integrity', async (req, res) => {
     }
   };
 
-    const data = mockData[poolId] || {
-      giniScore: 0,
-      extractivenessScore: 0,
-      topHolders: 0,
-      totalLiquidity: 0
-    };
-    return res.json(data);
-  }
+  return mockData[poolId] || {
+    giniScore: 0,
+    extractivenessScore: 0,
+    topHolders: 0,
+    totalLiquidity: 0
+  };
+};
 
-  // Real logic placeholder (would call integrityEngine if enabled)
+app.get('/api/pool/:id/integrity', async (req, res) => {
+  const poolId = req.params.id;
+  await delay(500);
+
+  if (process.env.MOCK_MODE !== 'false') {
+    return res.json(getMockData(poolId));
+  }
   return res.status(501).json({ error: 'Real integrity check not implemented in this demo version' });
+});
+
+// New Verification Endpoint
+app.get('/api/verify', async (req, res) => {
+  // Return Gini score for a default or query param pool
+  const poolId = req.query.poolId || 'SOL-USDC';
+  await delay(500);
+
+  // Reuse mock logic to ensure consistency
+  if (process.env.MOCK_MODE !== 'false') {
+    return res.json(getMockData(poolId));
+  }
+  return res.status(501).json({ error: 'Verification not implemented' });
 });
 
 // Real endpoint to fetch Solana transaction history (Optional usage)

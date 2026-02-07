@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import Navbar from './components/Navbar.jsx';
 import './App.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://trustchain-2-backend.vercel.app';
+
 function PoolIntegrityBadge({ poolId = 'RAY123' }) {
   const [integrity, setIntegrity] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fallback to the production URL if env var is missing (Emergency Fix)
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://trust-chain-backend-1nixsz5ct-jonathon-koerners-projects.vercel.app';
-    fetch(`${apiUrl}/api/pool/${poolId}/integrity`)
+    fetch(`${API_BASE_URL}/api/pool/${poolId}/integrity`)
       .then(res => res.json())
       .then(data => {
         setIntegrity(data);
