@@ -110,6 +110,7 @@ app.post('/api/pools/integrity', async (req, res) => {
 
     const results = {};
     poolIds.forEach(id => {
+      // Fallback for unknown pools to prevent Sybil attacks
       results[id] = mockData[id] || {
         giniScore: 0.5,
         status: 'PROBATIONARY',

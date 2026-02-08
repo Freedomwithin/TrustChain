@@ -5,19 +5,24 @@ import './App.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://trustchain-2-backend.vercel.app';
 
+export const TRUSTED_THRESHOLD = 0.1;
+export const PROBATIONARY_THRESHOLD = 0.5;
+
+export const getStatusDisplay = (status, score) => {
+  if (status === 'ERROR' || score == null || Number.isNaN(score)) {
+    return { label: 'ERROR', color: 'red' };
+  }
+  if (status === 'PROBATIONARY') return { label: 'PROBATIONARY ⚠️', color: 'orange' };
+  if (score < TRUSTED_THRESHOLD) return { label: 'TRUSTED ACTOR ✓', color: 'green' };
+  if (score <= PROBATIONARY_THRESHOLD) return { label: 'PROBATIONARY ⚠️', color: 'orange' };
+  return { label: 'POTENTIAL SYBIL 🚨', color: 'red' };
+};
+
 function WalletIntegrity() {
   const { publicKey, connected } = useWallet();
   const [giniScore, setGiniScore] = useState(null);
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  const getStatusDisplay = (status, score) => {
-    if (status === 'ERROR') return { label: 'ERROR', color: 'red' };
-    if (status === 'PROBATIONARY' || score === 0.5) return { label: 'PROBATIONARY ⚠️', color: 'orange' };
-    if (score < 0.1) return { label: 'TRUSTED ACTOR ✓', color: 'green' };
-    if (score <= 0.5) return { label: 'PROBATIONARY ⚠️', color: 'orange' };
-    return { label: 'POTENTIAL SYBIL 🚨', color: 'red' };
-  };
 
   useEffect(() => {
     if (connected && publicKey) {
@@ -70,14 +75,11 @@ function WalletIntegrity() {
 function PoolIntegrityBadge({ integrity, loading }) {
   if (loading) return <span className="badge loading">Analyzing...</span>;
 
-  const riskLevel = integrity?.extractivenessScore || 0;
-  const riskColor = riskLevel < 0.1 ? 'green' : riskLevel < 0.5 ? 'orange' : 'red';
+  const display = getStatusDisplay(integrity?.status, integrity?.extractivenessScore || 0);
 
   return (
-    <span className={`badge risk-${riskColor}`}>
-      {riskLevel < 0.1 && 'LOW RISK ✓'}
-      {riskLevel >= 0.1 && riskLevel < 0.5 && 'MEDIUM RISK ⚠️'}
-      {riskLevel >= 0.5 && 'HIGH RISK 🚨'}
+    <span className={`badge risk-${display.color}`}>
+      {display.label}
       <br />
       <small>Gini: {integrity?.giniScore?.toFixed(3) || '0.500'}</small>
     </span>
