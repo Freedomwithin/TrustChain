@@ -1,0 +1,26 @@
+[package]
+name = "integrity-contract"
+version = "0.1.0"
+authors = ["Jules"]
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[dependencies]
+cosmwasm-std = "1.0.0"
+cosmwasm-storage = "1.0.0"
+cw-storage-plus = "1.0.0"
+cw2 = "1.0.0"
+schemars = "0.8"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+thiserror = "1.0"
+
+[dev-dependencies]
+cosmwasm-schema = "1.0.0"
