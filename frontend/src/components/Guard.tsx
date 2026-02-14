@@ -1,14 +1,20 @@
 import React from 'react';
 import { useIntegrity } from '../hooks/useIntegrity';
-
-const PROBATIONARY_THRESHOLD = 0.5;
+import { PROBATIONARY_THRESHOLD, SYBIL_STATUS } from '../constants/integrity';
 
 interface GuardProps {
     children: React.ReactNode;
     fallback?: React.ReactNode;
+    threshold?: number;
+    sybilStatus?: string;
 }
 
-export const Guard: React.FC<GuardProps> = ({ children, fallback }) => {
+export const Guard: React.FC<GuardProps> = ({
+    children,
+    fallback,
+    threshold = PROBATIONARY_THRESHOLD,
+    sybilStatus = SYBIL_STATUS
+}) => {
     const { giniScore, loading, error, status } = useIntegrity();
 
     if (loading) {
@@ -19,9 +25,8 @@ export const Guard: React.FC<GuardProps> = ({ children, fallback }) => {
         return <div className="p-4 text-red-500">Error verifying wallet: {error}</div>;
     }
 
-    // Logic: Block if Gini > 0.5 or status is explicitly SYBIL
-    // Note: Gini <= 0.5 is Probationary or Verified. > 0.5 is Sybil.
-    const isSybil = (giniScore !== null && giniScore > PROBATIONARY_THRESHOLD) || status === 'SYBIL';
+    // Logic: Block if Gini > threshold or status is explicitly sybilStatus
+    const isSybil = (giniScore !== null && giniScore > threshold) || status === sybilStatus;
 
     if (isSybil) {
         if (fallback) {
@@ -33,7 +38,7 @@ export const Guard: React.FC<GuardProps> = ({ children, fallback }) => {
                 <p>Your wallet integrity score indicates high risk (Sybil detected).</p>
                 <div className="mt-2 text-sm">
                     <span>Gini Score: {giniScore?.toFixed(3)}</span>
-                    <span className="ml-2">(Threshold: {PROBATIONARY_THRESHOLD})</span>
+                    <span className="ml-2">(Threshold: {threshold})</span>
                 </div>
             </div>
         );

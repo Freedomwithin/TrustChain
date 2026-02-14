@@ -20,6 +20,8 @@ export function useIntegrity(): IntegrityData {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        let abortController = new AbortController();
+
         if (connected && publicKey) {
             setLoading(true);
             setError(null);
@@ -27,24 +29,29 @@ export function useIntegrity(): IntegrityData {
             fetch(`${API_BASE_URL}/api/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ address: publicKey.toBase58() })
+                body: JSON.stringify({ address: publicKey.toBase58() }),
+                signal: abortController.signal
             })
             .then(res => {
                 if (!res.ok) {
-                    throw new Error('Failed to fetch integrity score');
+                    throw new Error(`Failed to fetch integrity score: ${res.status} ${res.statusText}`);
                 }
                 return res.json();
             })
             .then(data => {
-                setGiniScore(data.giniScore != null ? parseFloat(data.giniScore) : null);
-                setHhiScore(data.hhiScore != null ? parseFloat(data.hhiScore) : null);
-                setStatus(data.status);
-                setLoading(false);
+                if (!abortController.signal.aborted) {
+                    setGiniScore(data.giniScore != null ? parseFloat(data.giniScore) : null);
+                    setHhiScore(data.hhiScore != null ? parseFloat(data.hhiScore) : null);
+                    setStatus(data.status);
+                    setLoading(false);
+                }
             })
             .catch(err => {
-                console.error('Verify error:', err);
-                setError(err instanceof Error ? err.message : 'Unknown error');
-                setLoading(false);
+                if (!abortController.signal.aborted) {
+                    console.error('Verify error:', err);
+                    setError(err instanceof Error ? err.message : 'Unknown error');
+                    setLoading(false);
+                }
             });
         } else {
             setGiniScore(null);
@@ -53,6 +60,10 @@ export function useIntegrity(): IntegrityData {
             setError(null);
             setLoading(false);
         }
+
+        return () => {
+            abortController.abort();
+        };
     }, [connected, publicKey]);
 
     return { giniScore, hhiScore, status, loading, error };
