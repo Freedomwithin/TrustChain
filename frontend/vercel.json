@@ -1,0 +1,7 @@
+{
+  "framework": "vite",
+  "buildCommand": "vite build",
+  "outputDirectory": "build",
+  "devCommand": "vite",
+  "installCommand": "npm install"
+}
